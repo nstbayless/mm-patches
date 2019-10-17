@@ -33,4 +33,15 @@ IF %ERRORLEVEL% NEQ 0 (
 	goto :end
 )
 
+flips\flips.exe --create --ips base.nes out.nes patch.ips
+
+IF %ERRORLEVEL% NEQ 0 (
+	ECHO patch creation failed.
+	goto :end
+)
+
+ECHO.
+ipsnect\ipsnect.exe patch.ips
+ECHO.
+
 :end

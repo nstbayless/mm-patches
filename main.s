@@ -9,3 +9,8 @@ SLOT 0 $0000
 
 .DEFINE BASE "base.nes"
 .BACKGROUND BASE
+
+.ORGA $55e7
+.SECTION "Bounce-YSpeed" OVERWRITE 
+	.db	$00
+.ENDS
