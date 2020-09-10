@@ -6,6 +6,6 @@ Tired of bouncing when landing? If you are, and you want a very specific cure fo
 
 Please place the ROM in the file `base.nes`.
 
-Patching uses the assembler [wla-dx](http://www.villehelin.com/wla.html), so that must be on the system PATH.
+Run `build.sh` (you can use git-bash to do this if your computer does not have a bash interpreter.)
 
-Run `build.bat` and out.nes as well as a patch should be produced.
+Building requires a custom fork of [asm6f](github.com/nstbayless/asm6f).

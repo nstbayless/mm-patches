@@ -3,3 +3,7 @@
 *.deb
 *.log
 *.ips
+*.zip
+*.obj
+inc-*
+*.cdl
