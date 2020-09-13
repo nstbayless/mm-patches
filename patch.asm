@@ -15,21 +15,187 @@ FROM $8BE5
 ; calculates screen y position of object X.
 calc_screen_y:
 
+FROM $8D70
+; input:
+; X is the y-position of the reference player on screen.
+; $00D0 is the current camera speed
+adjust_camera_speed:
+
 FROM $95B5
 read_joysticks:
 
 ifdef NO_AUTO_SCROLL
-    FROM $8D15
-        db $00
-        db $44
+    FROM $8D81
+        LDA camera_speed
+        DEY
+        BEQ skip_camcheck
+        CMP $8D15,Y
+        BCC inc_auto_scroll
+    skip_camcheck:
+        CPX #$0F
+        BCC rts_auto_scroll
+        LDA camera_speed
+        BEQ rts_auto_scroll
+        DEC camera_speed
+        BEQ rts_auto_scroll
+        DEC camera_speed
+        RTS
+    inc_auto_scroll:
+        INC camera_speed
+    rts_auto_scroll:
+        RTS
+    if $ > $8d9D
+        error "no-autoscroll hack space exceeded"
+    endif
+endif
+
+ifdef UNITILE
+
+    FROM $db36:
+    next0:
+        LDY #$0
+        LDA ($00),Y
+        TAY
+        INC $0
+        BNE next0rts
+        INC $1
+    next0rts:
+        TYA
+        RTS
+    
+    unitile_calc_prologue:
+        ; store registers
+        TXA
+        PHA
+        TYA
+        PHA
+        LDA $0
+        PHA
+        LDA $1
+        PHA
+        LDA $2
+        PHA
+        LDA $3
+        PHA
+        LDA $4
+        PHA
+        LDA $5
+        PHA
+
+        LDA med_row_idx
+        ASL
+        ASL
+        ASL
+        ASL
+        STA $2
+        SEC
+        LDA #$F0
+        SBC $2
+        STA $2
         
-    FROM $8D91
-        db $F0
-        db $09
-        db $E0
-        db $0F
-        db $90
-        db $05
+    unitile_calc:
+        LDA current_level
+        ASL
+        TAY
+        
+        LDA unitile_level_table,Y
+        STA $0
+        LDA unitile_level_table+1,Y
+        STA $1
+        
+        ; read data up to the current point
+        LDA #$0
+        STA $3
+        STA $4
+    
+    read_bytecode:
+        JSR next0
+        CMP #$0 ; 0 -> we're done.
+        BEQ unitile_calc_epilogue
+        CMP #$1 ; -> skip the next byte in tiles
+        BEQ bytecode_skip
+        
+        ; calculate if the current patch row matches the placement row
+        LDA $3
+        LSR
+        LSR
+        LSR
+        LSR
+        STA $5
+        LDA $4
+        ASL
+        ASL
+        ASL
+        ASL
+        ORA $5
+        
+        CMP med_row_idx
+        BCC skip_one_tile
+        BEQ apply
+        JMP unitile_calc_epilogue ; already past us.. no need to bother continuing
+        
+    apply:
+        LDA $3
+        AND #$f
+        CLC
+        ADC $2
+        TAX
+        
+        JSR next0
+        STA $600,X
+        JMP finish_read_one_tile
+        
+        skip_one_tile:
+        ; ignore this one
+        JSR next0
+        
+        finish_read_one_tile:
+        INC $3
+        BNE +
+        INC $4
+        +
+        JMP read_bytecode
+    
+    bytecode_skip:
+        JSR next0
+        CLC
+        ADC $3
+        STA $3
+        BCC read_bytecode
+        INC $4
+        JMP read_bytecode
+        
+    unitile_calc_epilogue:
+        ; restore registers
+        PLA
+        LDA $5
+        PLA
+        LDA $4
+        PLA
+        LDA $3
+        PLA
+        LDA $2
+        PLA
+        LDA $1
+        PLA
+        LDA $0
+        PLA
+        TAY
+        PLA
+        TAX
+        ; unhacked did this.
+        LDA $D2
+        AND #$03
+        
+        ; return from unitile calculation
+        JMP unitile_ret
+        
+    if $ > $DBE9
+        error "unitile patch space exceeded"
+    endif
+    
+    FROM $DBE9
+        unitile_level_table:
 endif
 
 ; executes the next commands for track X.
@@ -86,6 +252,21 @@ contact_players:
 FROM $A0BA
 terrain_collision:
 
+FROM $CAAD
+read_4_bits:
+
+FROM $CAB1
+read_1_bit:
+
+FROM $CAB5
+read_5_bits:
+
+FROM $CAB7
+read_y_bits:
+
+FROM $DAD0:
+level_table:
+
 ; multiplies A and Y, stores the result in $a6:a7.
 FROM $EA97
 multiply:
@@ -112,10 +293,16 @@ nibble_advance:
 FROM $EA89:
 load_deadvance:
 
-
 ;sets the medtile data pointers EF, etc. to values from F883 onwards.
 FROM $F6DE
 set_medtile_data_pointers:
 
 FROM $F30D
 start_stage:
+
+ifdef UNITILE
+    FROM $F620
+        jmp unitile_calc_prologue
+        NOP
+    unitile_ret
+endif

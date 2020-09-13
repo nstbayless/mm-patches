@@ -2,27 +2,58 @@
 ; memory address values
 ENUM $0
 
-FROM $BC
+BASE $BC
 current_level:
 
+BASE $71
+game_state: ; 01 -> normal, 05 -> star-spin flying?
+
+BASE $6F
+game_state_b: ; bit 7: hard mode. bit 6: hell mode.
+
+BASE $D0
+camera_speed:
+
+BASE $7E
+med_row_idx:
+
+; -----------------------------------------------------------------------------
+
+; buffer of length 0x20. First four entries are reserved for the players.
+BASE $200
+object_ids:
+
 ; object x:
-FROM $4A
+BASE $4A
 object_x: 
 
-FROM $360
+BASE $360
 object_y: 
 
-FROM $2A0
+BASE $2E0
+object_state_a:
+
+BASE $3F0
+object_state_b:
+
+; used as a timer by skeleton
+BASE $300
+object_state_c:
+
+BASE $2A0
 object_yspeed_int:
 
-FROM $2C0
+BASE $2C0
 object_yspeed_frac:
 
-FROM $260
+BASE $260
 object_xspeed_int:
 
-FROM $280
+BASE $280
 object_xspeed_frac:
+
+BASE $440
+object_hp:
 
 ; ------------------------------------------------------------------------------
 ; music
@@ -38,7 +69,7 @@ mus_current_song:
 
 ; these are each arrays of length 6. The first 4 indices are for each channel, the second two are for sfx.
 
-; the following two define the current "nibble" position of the track, as an offset in nibbles from $8000.
+; the following two define the current "nibble" position of the track, as an offset in nibbles BASE $8000.
 BASE $466
 mus_pattern_l:
 BASE $46C
@@ -105,7 +136,7 @@ mus_varE:
 
 ; the amount of time this note has been playing so far
 ; every note, this resets to 0.
-FROM $4BE
+BASE $4BE
 mus_note_timer:
 
 BASE $4F5
@@ -115,11 +146,6 @@ BASE $4F9
 mus_varB:
 
 ; ------------------------------------------------------------------------------
-BASE $71
-game_state: ; 01 -> normal, 05 -> star-spin flying?
-
-BASE $D0
-camera_speed:
 
 ; points to next 4 (8 when mirrored) macro-tiles.
 BASE $C0
@@ -142,10 +168,5 @@ medtile_data_c:
 
 BASE $F1
 medtile_data_d:
-
-BASE $200
-object_ids: ; buffer of length 0x20. First four entries are reserved for the players.
-
-BASE 
 
 ENDE
