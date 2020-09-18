@@ -117,7 +117,7 @@ ifdef UNITILE
         STA $4
     
         LDA current_level
-        ifdef MULTI_UNITILE_CHUNK_PER_LEVEL
+        ifndef SINGLE_UNITILE_CHUNK_PER_LEVEL
             ; Y <- ((current_level * 4) | (med_row_idx / 16)) << 1
             ; $3:4 = 16 * (med_row_idx / 16) * 16
             ; if the size of a level is ever extended, this logic must be adjusted or disabled.
@@ -149,7 +149,7 @@ ifdef UNITILE
     read_bytecode:
         JSR next0
         CMP #$0 ; 0 -> we're done.
-        BEQ jmp_to_unitile_calc_epilogue
+        BEQ unitile_calc_epilogue
         CMP #$1 ; -> skip the next byte in tiles
         BEQ bytecode_skip
         CMP #$3
@@ -277,11 +277,11 @@ ifdef UNITILE
         ; return from unitile calculation
         RTS
         
-    if $ > $DC38
+    if $ > $DC48
         error "unitile patch space exceeded"
     endif
     
-    FROM $DC38
+    FROM $DC48
         unitile_level_table:
 endif
 
