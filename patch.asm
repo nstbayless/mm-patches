@@ -81,17 +81,34 @@ ifdef UNITILE
         PHA
         LDA $5
         PHA
+        
+        LDA current_level
+        ASL
+        TAY
+        LDA level_table,Y
+        STA $0
+        ;LDA level_table+1,Y
+        ;STA $1
 
-        LDA med_row_idx
-        ASL
-        ASL
-        ASL
-        ASL
-        STA $2
         SEC
-        LDA #$F0
-        SBC $2
-        STA $2
+        LDA level_data
+        SBC $0
+        LSR
+        LSR
+        ASL
+        STA $0
+        DEC $0
+        DEC $0 ; now contains the current macro row idx * 0x2
+        
+        ; determine med row idx
+        LDA $5C9
+        LSR
+        LSR
+        LSR
+        LSR
+        AND #$1
+        ORA $0
+        STA $2 ; now contains med row idx
         
     unitile_calc:
         LDA current_level
@@ -114,6 +131,11 @@ ifdef UNITILE
         BEQ unitile_calc_epilogue
         CMP #$1 ; -> skip the next byte in tiles
         BEQ bytecode_skip
+        CMP #$3
+        BEQ bytecode_skip_1
+        
+        AND #$E0
+        TAX
         
         ; calculate if the current patch row matches the placement row
         LDA $3
@@ -129,36 +151,79 @@ ifdef UNITILE
         ASL
         ORA $5
         
-        CMP med_row_idx
+        CMP $2
         BCC skip_one_tile
-        BEQ apply
+        BEQ apply_if_matches
         JMP unitile_calc_epilogue ; already past us.. no need to bother continuing
+    
+    apply_if_matches:
+        ; check if normal/hardmode/hellmode flag matches.
+        TXA ; retrieves header byte
+        BEQ apply ; 0 means all modes are okay
+        BIT game_state_b
         
+        BVC +
+        AND #$20
+        BNE read_bytecode ; skip
+        BEQ apply         ; matches
+        ; -----
+        
+      + BPL +
+        AND #$40
+        BNE skip_one_tile ; skip
+        BEQ apply         ; matches
+        ; -----
+    
+      + AND #$80
+        BNE skip_one_tile ; skip
+    
     apply:
+        ; stash $2
+        LDA $2
+        PHA
+        
+        ; $2 <- #$f0 - ($2 << 4)
+        ASL
+        ASL
+        ASL
+        ASL
+        STA $2
+        
+        SEC
+        LDA #$F0
+        SBC $2
+        STA $2
+        
+        ; get x offset, add to $2
         LDA $3
         AND #$f
         CLC
         ADC $2
         TAX
         
+        ; restore $2
+        PLA
+        STA $2
+        
         JSR next0
         STA $600,X
-        JMP finish_read_one_tile
+        JMP read_bytecode
         
         skip_one_tile:
         ; ignore this one
         JSR next0
         
         finish_read_one_tile:
-        INC $3
-        BNE +
-        INC $4
-        +
         JMP read_bytecode
+    
+    bytecode_skip_1:
+        LDA #$0
+        BEQ bytecode_skip_add; guaranteed
     
     bytecode_skip:
         JSR next0
-        CLC
+    bytecode_skip_add:
+        SEC
         ADC $3
         STA $3
         BCC read_bytecode
@@ -190,11 +255,11 @@ ifdef UNITILE
         ; return from unitile calculation
         JMP unitile_ret
         
-    if $ > $DBE9
+    if $ > $DC31
         error "unitile patch space exceeded"
     endif
     
-    FROM $DBE9
+    FROM $DC31
         unitile_level_table:
 endif
 
