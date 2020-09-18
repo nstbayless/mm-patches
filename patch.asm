@@ -111,24 +111,45 @@ ifdef UNITILE
         STA $2 ; now contains med row idx
         
     unitile_calc:
-        LDA current_level
-        ASL
-        TAY
-        
-        LDA unitile_level_table,Y
-        STA $0
-        LDA unitile_level_table+1,Y
-        STA $1
-        
         ; read data up to the current point
         LDA #$0
         STA $3
         STA $4
     
+        LDA current_level
+        ifdef MULTI_UNITILE_CHUNK_PER_LEVEL
+            ; Y <- ((current_level * 4) | (med_row_idx / 16)) << 1
+            ; $3:4 = 16 * (med_row_idx / 16) * 16
+            ; if the size of a level is ever extended, this logic must be adjusted or disabled.
+            ASL
+            ASL
+            STA $0
+            LDA $2
+            LSR
+            LSR
+            LSR
+            LSR
+            AND #$3 ; paranoia
+            STA $4
+            ORA $0
+        endif
+        ASL
+        TAY
+        
+        ; get the pointer to the start of the med-tile data chunk for Y.
+        LDA unitile_level_table,Y
+        STA $0
+        LDA unitile_level_table+1,Y
+        STA $1
+        
+        ; if pointer is 0000, early-out.
+        ORA $0
+        BEQ jmp_to_unitile_calc_epilogue
+    
     read_bytecode:
         JSR next0
         CMP #$0 ; 0 -> we're done.
-        BEQ unitile_calc_epilogue
+        BEQ jmp_to_unitile_calc_epilogue
         CMP #$1 ; -> skip the next byte in tiles
         BEQ bytecode_skip
         CMP #$3
@@ -154,6 +175,7 @@ ifdef UNITILE
         CMP $2
         BCC skip_one_tile
         BEQ apply_if_matches
+    jmp_to_unitile_calc_epilogue:
         JMP unitile_calc_epilogue ; already past us.. no need to bother continuing
     
     apply_if_matches:
@@ -164,7 +186,7 @@ ifdef UNITILE
         
         BVC +
         AND #$20
-        BNE read_bytecode ; skip
+        BNE skip_one_tile ; skip
         BEQ apply         ; matches
         ; -----
         
@@ -233,17 +255,17 @@ ifdef UNITILE
     unitile_calc_epilogue:
         ; restore registers
         PLA
-        LDA $5
+        STA $5
         PLA
-        LDA $4
+        STA $4
         PLA
-        LDA $3
+        STA $3
         PLA
-        LDA $2
+        STA $2
         PLA
-        LDA $1
+        STA $1
         PLA
-        LDA $0
+        STA $0
         PLA
         TAY
         PLA
@@ -253,13 +275,13 @@ ifdef UNITILE
         AND #$03
         
         ; return from unitile calculation
-        JMP unitile_ret
+        RTS
         
-    if $ > $DC31
+    if $ > $DC38
         error "unitile patch space exceeded"
     endif
     
-    FROM $DC31
+    FROM $DC38
         unitile_level_table:
 endif
 
@@ -367,7 +389,6 @@ start_stage:
 
 ifdef UNITILE
     FROM $F620
-        jmp unitile_calc_prologue
+        JSR unitile_calc_prologue
         NOP
-    unitile_ret
 endif
