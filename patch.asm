@@ -380,6 +380,9 @@ nibble_advance:
 FROM $EA89:
 load_deadvance:
 
+FROM $F2C6
+set_world:
+
 ;sets the medtile data pointers EF, etc. to values from F883 onwards.
 FROM $F6DE
 set_medtile_data_pointers:

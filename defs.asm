@@ -5,6 +5,12 @@ ENUM $0
 BASE $BC
 current_level:
 
+BASE $BD
+current_world:
+
+BASE $72
+current_lives:
+
 BASE $71
 game_state: ; 01 -> normal, 05 -> star-spin flying?
 
