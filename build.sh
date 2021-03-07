@@ -1,7 +1,7 @@
 # note: asm6f must be on the PATH.
-configs=(NO_BOUNCY_LANDINGS NO_AUTO_SCROLL UNITILE)
-outs=(no-bouncy-landings no-auto-scroll unitile)
-folders=("no-bouncy-landings/" "no-auto-scroll/" "unitile")
+configs=(NO_BOUNCY_LANDINGS NO_AUTO_SCROLL UNITILE EXTENDED_OBJECTS)
+outs=(no-bouncy-landings no-auto-scroll unitile extended_objects)
+folders=("no-bouncy-landings/" "no-auto-scroll/" "unitile/" "ext-objects/")
 
 name="micro-mages"
 
@@ -19,7 +19,7 @@ then
     mkdir "nes"
 fi
 
-for i in {0..2}
+for i in {0..3}
 do
     BASE=base.nes
     CONFIG="${configs[$i]}"

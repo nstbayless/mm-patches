@@ -20,6 +20,9 @@ game_state_b: ; bit 7: hard mode. bit 6: hell mode.
 BASE $D0
 camera_speed:
 
+BASE $7F
+item_drop_counter:
+
 ; -----------------------------------------------------------------------------
 
 ; buffer of length 0x20. First four entries are reserved for the players.
